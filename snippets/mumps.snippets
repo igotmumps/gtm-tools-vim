@@ -1,0 +1,63 @@
+snippet newunit
+	t${1:1}()
+	;;;--------------------------------------
+	META
+	;- Description: ${2:description}
+	;- Author: ${3:Michael Zacharias}
+	;- Disable: ${4:N}
+	;- Dependencies: $5
+	;;;--------------------------------------
+		N er
+		S er=0
+		S er=$$setup
+		S er=$$exec
+		D teardown
+		Q er
+		;
+	exec()
+		N er
+		S er=0
+		Q er
+		;
+	setup()
+		N er
+		S er=0
+		Q er
+		;
+	teardown
+		Q
+		;
+snippet sqlupdate
+	D UPDATE^SQL(${1} SET ${2} WHERE ${3})
+snippet sqlinsert
+	D INSERT^SQL(${1} FROM ${2} WHERE ${3},,,.sqldta)
+	I sqldta="" S ER=1,RM="SQL Error" Q 
+snippet sqlselect1
+	D SELECT^SQL("${1:col1} FROM ${2:table} WHERE ${3:where}",,,.${4:$1})
+	S ${5:data}=${6:$1}
+snippet sqlselect2
+	D SELECT^SQL("${1:col1} FROM ${2:table} WHERE ${3:where}",,,.sqldata)
+	I sqldata="" Q
+	S ${4:data}=$P(sqldata,$C(9),1)
+
+snippet sqlselect3
+	D SELECT^SQL("${1:col1} FROM ${2:table} WHERE ${3:where}",,,.sqldata)
+	F I=1:1:$L(sqldata,$C(13,10)) S RESULT(I)=$P(sqldata,C(9),I)
+
+snippet mrpcp029
+	K  D SYSVAR^SCADRV0() S (ER,TLO,%LOGID)="",%UID=9222,%UCLS="SCA",TLO=$$TLO^UTLO()
+	S ER=$$^MRPCP029(.RETURN,1,${1:ACN},${2:FRACCT},${3:TOACCT},"${4:50}","USD","${5:NOW}","","${6:Once}","Once","","~~~~")
+	ZWR RETURN
+snippet mrpc907
+	K  D SYSVAR^SCADRV0() S (ER,TLO,%LOGID)="",%UID=9222,%UCLS="SCA",TLO=$$TLO^UTLO()
+	S ER=$$^MRPC907(.RETURN,1,${1:ACN},${2:FRACCT},${3:TOACCT},${4:50},"USD","${5:NOW|LATER|RECUR}",${6:EFD},"${7:FREQ}","${8:REC}","${9:EXP}","~~~~")
+	ZWR RETURN
+snippet NEWMTV
+	K  D SYSVAR^SCADRV0() S (ER,TLO,%LOGID)="",%UID=9222
+	S MTYPE="${1:POS}"
+	S PARAMS="TAMT:${2:25}"
+	S PARAMS=PARAMS_",CID:${3:44784340}"
+	S *MTV=$$NEW^ZQAMTV(MTYPE,PARAMS) I ER W RM,!
+	S IM=$$ENCODE^ZQAMTV("02",.MTV) I ER W RM,!
+	S OM=$$SEND^ZQAMTV(IM) I ER W RM,!
+	D DECODE^TESTZMTV2(OM)
