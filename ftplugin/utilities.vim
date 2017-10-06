@@ -17,6 +17,35 @@ endfunction
 
 command! -nargs=1 GDump call GDump(<q-args>) 
 
+function! s:initVariable(var, value)
+	if !exists(a:var)
+		exec 'let ' . a:var . ' = ' . substitute(a:value, "'", "''", "g") . "'"
+		return 1
+	endif
+	return 0
+endfunction
+
+function! s:initGTMRoutines(dir)
+	let l:gtmroutines = system($HOME . "/wb/gtm-tools/scripts/getGTMZRO.sh " . a:dir)
+	let l:gtmroutines = substitute(l:gtmroutines,'\n\+$','','')
+	return l:gtmroutines
+endfunction
+
+function! GetFromProfile(ObjType,ObjId,dir)
+	let l:ObjType = a:ObjType
+	let l:ObjId = a:ObjId
+	let l:dir = a:dir
+	let l:gtmro = s:initGTMRoutines(l:dir)
+	let $gtmroutines=$HOME . "/wb/gtm-tools/o(" . $HOME . "/wb/gtm-tools/r) " . l:gtmro
+	echom $gtmroutines
+	let $PATH = $PATH . ':/ingmnt/data/SCA/gtm_dist/'
+	echom $PATH
+	let l:cmd="mumps -r GETFROMPROFILE^PROFILETBX '" . l:ObjType . "," . l:ObjId . "'"
+	execute '$read !'.cmd
+endfunction
+
+"command! -nargs=1 GetFromProfile call GetFromProfile(<q-args>)
+
 function! ZTarget(env)
 	let l:env=a:env
 	let l:rv = system("env")
