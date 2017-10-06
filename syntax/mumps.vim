@@ -1,138 +1,242 @@
-" Mumps syntax file
-" Language:	MUMPS
-" Maintainer:	Jim Self, jaself@ucdavis.edu
-" Last change:	02 June 2001
+" Package:       Axiom
+" File:          mumps.vim
+" Language:      MUMPS/GT.M
+" Summary:       Syntax file
+" Maintainer:    David Wicksell <dlw@linux.com>
+" Last Modified: Feb 6, 2013
+"
+" Written by David Wicksell <dlw@linux.com>
+" Copyright © 2010-2013 Fourth Watch Software, LC
+"
+" This program is free software: you can redistribute it and/or modify
+" it under the terms of the GNU Affero General Public License (AGPL)
+" as published by the Free Software Foundation, either version 3 of
+" the License, or (at your option) any later version.
+"
+" This program is distributed in the hope that it will be useful,
+" but WITHOUT ANY WARRANTY; without even the implied warranty of
+" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+" GNU Affero General Public License for more details.
+"
+" You should have received a copy of the GNU Affero General Public License
+" along with this program. If not, see http://www.gnu.org/licenses/.
+"
+" This Vim syntax file was created to deal with a GT.M environment.
+" It was inspired by earlier work by Jim Self <jaself@ucdavis.edu>.
 
-" related formatting, jas 24Sept03 - experimental
-set lbr
-set breakat=\ ,
-set showbreak=\ \ \ \ \ \ \ +\ 
 
-" Remove any old syntax stuff hanging around
-syn clear
-syn sync    maxlines=0
-syn sync    minlines=0
-syn case    ignore
+if v:version < 600
+  syntax clear
+elseif exists("b:current_syntax")
+  finish
+elseif exists("b:mumps_syntax")
+  "fold comment blocks
+  syntax region mumpsCommentBlock keepend transparent fold
+    \ start=/\(^\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\|\s\+;\@!\).*\n\)\@<=\s\+;/
+    \ end=/\n\ze\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\|\s\+;\@!\)/
 
-"errors
-syn match   mumpsError          contained /[^ \t;].\+/
-syn match   mumpsBadString 	/".*/
-" Catch mismatched parentheses
-syn match   mumpsParenError	/).*/
-syn match   mumpsBadParen	/(.*/
+  "fold dotted-do blocks recursively, to an arbitrary depth
+  syntax region mumpsDoBlock keepend transparent fold
+    \ start=/^.*\s[Dd][Oo]\?\(\n\|:.*\n\|\s\{2}.*\n\)\ze\z\(\(\s\+\.\)\+\)/
+    \ skip=/\n\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\)\z1/
+    \ end=/\n\ze\z1\@!/
 
+  let b:current_syntax = "mumps"
 
-" Line Structure
-syn region  mumpsComment        contained start=/;/ end=/$/
-syn
-" contains=mumpsTodo
-syn region  mumpsTodo   	contained start=/TODO/ start=/XXX/ start=/FIX/ start=/DEBUG/ start=/DISABLED/ end=/;/ end=/$/
-
-syn match   mumpsLabel  	contained /^[%A-Za-z][A-Za-z0-9]*\|^[0-9]\+/ nextgroup=mumpsFormalArgs
-syn region  mumpsFormalArgs	contained oneline start=/(/ end=/)/ contains=mumpsLocalName,","
-syn match   mumpsDotLevel	contained /\.[. \t]*/
-
-syn region  mumpsCmd		contained oneline start=/[A-Za-z]/ end=/[ \t]/ end=/$/ contains=mumpsCommand,mumpsZCommand,mumpsPostCondition,mumpsError nextgroup=mumpsArgsSeg
-syn region  mumpsPostCondition	contained oneline start=/:/hs=s+1 end=/[ \t]/re=e-1,he=e-1,me=e-1 end=/$/ contains=@mumpsExpr
-syn region  mumpsArgsSeg	contained oneline start=/[ \t]/lc=1 end=/[ \t]\+/ end=/$/ contains=@mumpsExpr,",",mumpsPostCondition
-
-syn match   mumpsLineStart      contained /^[ \t][. \t]*/ 
-syn match   mumpsLineStart      contained /^[%A-Za-z][^ \t;]*[. \t]*/ contains=mumpsLabel,mumpsDotLevel 
-syn region  mumpsLine		start=/^/ keepend end=/$/ contains=mumpsCmd,mumpsLineStart,mumpsComment
-
-syn cluster mumpsExpr     	contains=mumpsVar,mumpsIntrinsic,mumpsExtrinsic,mumpsString,mumpsParen,mumpsOperator,mumpsBadString,mumpsBadNum,mumpsVRecord
-
-syn match   mumpsVar		contained /\^=[%A-Za-z][A-Za-z0-9]*/ nextgroup=mumpsSubs
-syn match   mumpsIntrinsic 	contained /$[%A-Za-z][A-Za-z0-9]*/ contains=mumpsIntrinsicFunc,mumpsZInFunc,mumpsSpecialVar,mumpsZVar nextgroup=mumpsParams
-syn match   mumpsExtrinsic	contained /$$[%A-Za-z][A-Za-z0-9]*\(^[%A-Za-z][A-Za-z0-9]*\)\=/ nextgroup=mumpsParams
-
-syn match   mumpsLocalName	contained /[%A-Za-z][A-Za-z0-9]*/
-
-" Operators
-syn match   mumpsOperator       contained "[+\-*/=&#!'\\\]<>?@]"
-syn match   mumpsOperator       contained "]]"
-syn region  mumpsVRecord	contained start=/[= \t,]</lc=1 end=/>/ contains=mumpsLocalName,","
-
-" Constants
-syn region  mumpsString 	contained oneline start=/"/ skip=/""/ excludenl end=/"/ oneline
-syn match   mumpsBadNum 	contained /\<0\d+\>/
-syn match   mumpsBadNum 	contained /\<\d*\.\d*0\>/
-syn match   mumpsNumber 	contained /\<\d*\.\d{1,9}\>/
-syn match   mumpsNumber 	contained /\<\d+\>/
-
-syn region  mumpsParen     	contained oneline start=/(/ end=/)/ contains=@mumpsExpr
-syn region  mumpsSubs		contained oneline start=/(/ end=/)/ contains=@mumpsExpr,","
-syn region  mumpsActualArgs	contained oneline start=/(/ end=/)/ contains=@mumpsExpr,","
-
-" Keyword definitions -------------------
-"-- Commands --
-syn keyword mumpsCommand	contained B[reak] C[lose] D[o] E[lse] F[or] G[oto] H[alt] H[ang]
-syn keyword mumpsCommand 	contained I[f] J[ob] K[ill] L[ock] M[erge] N[ew] O[pen] Q[uit]
-syn keyword mumpsCommand 	contained R[ead] S[et] TC[ommit] TRE[start] TRO[llback] TS[tart]
-syn keyword mumpsCommand 	contained U[se] V[iew] W[rite] X[ecute] 
-
-"  -- GT.M specific --
-syn keyword mumpsZCommand 	contained ZA[llocate] ZB[reak] ZCOM[pile] ZC[ontinue] ZD[eallocate]
-syn keyword mumpsZCommand 	contained ZED[it] ZG[oto] ZH[elp] ZL[ink] ZM[essage] ZP[rint]
-syn keyword mumpsZCommand 	contained ZSH[ow] ZST[ep] ZSY[stem] ZTC[ommit] ZTS[tart]
-syn keyword mumpsZCommand 	contained ZWI[thdraw] ZWR[ite]
-
-"-- Intrinsic Functions
-syn keyword mumpsIntrinsicFunc	contained A[scii] C[har] D[ata] E[xtract] F[ind] FN[umber] G[et]
-syn keyword mumpsIntrinsicFunc	contained J[ustify] L[ength] N[ame] N[ext] O[rder] P[iece]
-syn keyword mumpsIntrinsicFunc	contained Q[uery] R[andom] S[elect] T[ext] T[ranslate] V[iew]
-
-" -- GT.M z-functions --
-syn keyword mumpsZInFunc	contained ZD[ate] ZM[essage] ZPARSE ZP[revious] ZSEARCH ZTRNLNM 
-
-" Special Variables
-syn keyword mumpsSpecialVar	contained D[evice] H[orolog] I[O] J[ob] K[ey] P[rincipal]
-syn keyword mumpsSpecialVar	contained S[torage] T[est] TL[evel] TR[estart] X Y	
-
-"-- GT.M specific --
-syn keyword mumpsZVar	contained ZCSTATUS ZDIR[ectory] ZEDIT ZEOF ZGBL[dir]
-syn keyword mumpsZVar	contained ZIO ZL[evel] ZPOS[ition] ZPROMP[t] ZRO[utines]
-syn keyword mumpsZVar	contained ZSO[urce] ZS[tatus] ZSYSTEM ZT[rap] ZVER[sion]
-
-if !exists("did_mumps_syntax_inits")
-  let did_mumps_syntax_inits = 1
-
-  " The default methods for hilighting.  Can be overridden later
-  hi! link mumpsCommand		Statement
-  "hi! link mumpsZCommand        PreProc
-  hi! link mumpsZCommand    Statement
-  hi! link mumpsIntrinsicFunc   Function
-  hi! link mumpsZInFunc		Preproc
-  hi! link mumpsSpecialVar      Function
-  hi! link mumpsZVar		PreProc
-  hi! link mumpsLineStart    	Statement
-  hi! link mumpsLabel		PreProc
-  hi! link mumpsFormalArgs	PreProc
-  hi! link mumpsDotLevel	PreProc
-  hi! link mumpsCmdSeg		Special
-  hi! link mumpsPostCondition	Special
-  hi! link mumpsCmd		Statement
-  hi! link mumpsArgsSeg		Special
-  hi! link mumpsExpr		PreProc
-  hi! link mumpsVar		Identifier
-  hi! link mumpsParen           Special
-  hi! link mumpsSubs            Special
-  hi! link mumpsActualArgs      Special
-  hi! link mumpsIntrinsic       Special
-  hi! link mumpsExtrinsic	Special
-  hi! link mumpsString		String
-  hi! link mumpsNumber		Number
-  hi! link mumpsOperator	Special
-  hi! link mumpsComment		Error
-  hi! link mumpsError		Error
-  hi! link mumpsBadNum		Error
-  hi! link mumpsBadString	Error
-  hi! link mumpsBadParen	Error
-  hi! link mumpsParenError	Error
-
-  hi! link mumpsTodo		Todo
+  finish
 endif
 
-let b:current_syntax = "mumps"
+syntax case ignore
+"we want to sync fromstart, as dotted-do blocks can be arbitrarily long
+"in order to ensure fast syncing, all but the mumps blocks are skipped
+syntax sync fromstart
 
-" vim: ts=8
+"define the lines as containers
+syntax region mumpsLevelLine start=/^[ \t;]/ end=/$/ display keepend oneline
+  \ contains=mumpsDotLevel
+syntax region mumpsFormalLine start=/^\S/ end=/$/ display keepend oneline
+  \ contains=mumpsLabel
+syntax region mumpsCommentLine start=/^;/ end=/$/ display keepend oneline
+  \ contains=mumpsComment
+
+"beginnings of lines
+syntax match mumpsDotLevel /^\s\+[. \t]*/ display contained
+  \ nextgroup=mumpsCommand,mumpsComment
+"mumpsDotRegion can follow a label, but not in a formal line or later
+syntax match mumpsDotRegion /\s\+[. \t]*/ display contained
+  \ nextgroup=mumpsCommand,mumpsComment
+syntax match mumpsLabel /^[%A-Za-z][A-Za-z0-9]*:\?\|^[0-9]\+:\?/
+  \ display contained nextgroup=mumpsLabelList,mumpsDotRegion,mumpsComment
+syntax region mumpsLabelList matchgroup=mumpsComma start=/(/ end=/)/ display
+  \ oneline contained contains=mumpsVariable,mumpsComma
+  \ nextgroup=mumpsCommand,mumpsComment,mumpsSpace
+
+"flag obvious errors
+syntax match mumpsStringError /".*/ display contained
+syntax match mumpsParenError /(.*/ display contained
+syntax match mumpsParenError /).*/ display contained
+
+"contained syntax patterns
+syntax region mumpsString start=/"/ skip=/""/ end=/"/ display keepend
+  \ oneline contained
+syntax match mumpsComment /;.*/ display contained
+syntax match mumpsVariable /[%A-Za-z]\+[A-Za-z0-9]*/ display contained
+syntax match mumpsNumber /[0-9]\+/ display contained
+"too hard to match on legal operators without more needless complexity
+"added dollar to deal with the _$<func> or $<func>_ intrinsic function bug
+syntax match mumpsOperator "[$*_+-/\=<>'#&!?@,^:[\]]" display contained
+"necessary to highlight a comma in a mumpsLabelList properly
+syntax match mumpsComma /,/ display contained
+"mumps allows unlimited white space after arguments and argumentless commands
+syntax match mumpsSpace /\s\+/ display contained
+  \ nextgroup=mumpsCommand,mumpsComment
+"handle an argumentless command properly
+syntax match mumpsCommandEnd /  / display contained
+  \ nextgroup=mumpsSpace,mumpsCommand,mumpsComment
+
+syntax cluster mumpsArgumentCluster contains=mumpsVariable,mumpsNumber,
+  \mumpsOperator,mumpsString,mumpsSpecialVariable,mumpsExtrinsicFunction,
+  \mumpsFunction,mumpsFunctionList,mumpsStringError,mumpsParenError
+
+"skip strings with arbitrary spaces, and don't eat an ending " ; \n or space
+syntax region mumpsArgument start=/ / skip=/"[^"]*"/me=e-1 end=/[ ;]\|\n/me=e-1
+  \ display oneline contained contains=@mumpsArgumentCluster
+  \ nextgroup=mumpsSpace,mumpsComment
+
+"skip strings with arbitrary spaces, and don't eat an ending " ; \n or space
+syntax region mumpsPostCondition display oneline contained
+  \ start=/:\S\+/ skip=/"[^"]*"/ end=/[ ;]\|\n/me=e-1
+  \ contains=@mumpsArgumentCluster
+  \ nextgroup=mumpsArgument,mumpsCommandEnd,mumpsComment
+
+syntax cluster mumpsFunctionCluster contains=mumpsVariable,mumpsOperator,
+  \mumpsString,mumpsNumber,mumpsSpecialVariable,mumpsFunctionList,
+  \mumpsFunction,mumpsStringError,mumpsParenError,mumpsExtrinsicFunction
+
+"match the $$<func>, but not the ^<routine>, since non-func calls don't match
+syntax match mumpsExtrinsicFunction display contained
+  \ /\$\$[%A-Za-z]\+[A-Za-z0-9]*/
+syntax region mumpsFunctionList matchgroup=mumpsComma start=/(/ end=/)/ display
+  \ oneline contained contains=@mumpsFunctionCluster
+
+"mumps commands
+syntax keyword mumpsCommand contained B C D E F G H I J K L M N O Q R S TC TRE
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained TRO TS U V W X ZA ZB ZCOM ZC ZD ZED ZG ZH
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained ZL ZK ZM ZP ZSH ZST ZSY ZTC ZTS ZWI ZWR
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained BREAK CLOSE DO ELSE FOR GOTO HALT HANG IF
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained JOB KILL LOCK MERGE NEW OPEN QUIT READ SET
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained TCOMMIT TRESTART TROLLBACK TSTART USE VIEW
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained WRITE XECUTE ZALLOCATE ZBREAK ZCOMPILE
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained ZCONTINUE ZDEALLOCATE ZEDIT ZGOTO ZHELP
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained ZLINK ZKILL ZMESSAGE ZPRINT ZSHOW ZSTEP
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+syntax keyword mumpsCommand contained ZSYSTEM ZTCOMMIT ZTSTART ZWITHDRAW ZWRITE
+  \ nextgroup=mumpsArgument,mumpsPostCondition,mumpsCommandEnd,mumpsComment
+
+"mumps intrinsic functions, you have to add $ to iskeyword for this to work
+"it is already added in settings.vim, sourced if in a mumps filetype buffer
+syntax keyword mumpsFunction contained $A $C $D $E $F $FN $G $I $INCR $J $L $NA
+syntax keyword mumpsFunction contained $N $O $P $QL $QS $Q $R $RE $S $ST $T $TR
+syntax keyword mumpsFunction contained $V $ZAH $ZA $ZC $ZD $ZE $ZF $ZINCR $ZJ
+syntax keyword mumpsFunction contained $ZL $ZP $ZTR $ZCO $ZSUB $ZW $ZM $ZTRI
+syntax keyword mumpsFunction contained $ASCII $CHAR $DATA $EXTRACT $FIND
+syntax keyword mumpsFunction contained $FNUMBER $GET $INCREMENT $JUSTIFY $LENGTH
+syntax keyword mumpsFunction contained $NAME $NEXT $ORDER $PIECE $QLENGTH
+syntax keyword mumpsFunction contained $QSUBSCRIPT $QUERY $RANDOM $REVERSE
+syntax keyword mumpsFunction contained $SELECT $STACK $TEXT $TRANSLATE $VIEW
+syntax keyword mumpsFunction contained $ZAHANDLE $ZBITAND $ZBITCOUNT $ZBITFIND
+syntax keyword mumpsFunction contained $ZBITGET $ZBITLEN $ZBITNOT $ZBITOR
+syntax keyword mumpsFunction contained $ZBITSET $ZBITSTR $ZBITXOR $ZASCII $ZCHAR
+syntax keyword mumpsFunction contained $ZDATA $ZDATE $ZEXTRACT $ZFIND
+syntax keyword mumpsFunction contained $ZINCREMENT $ZJUSTIFY $ZLENGTH $ZPIECE
+syntax keyword mumpsFunction contained $ZTRANSLATE $ZCONVERT $ZSUBSTR $ZWIDTH
+syntax keyword mumpsFunction contained $ZJOBEXAM $ZMESSAGE $ZPARSE $ZPREVIOUS
+syntax keyword mumpsFunction contained $ZQGBLMOD $ZSEARCH $ZTRIGGER $ZTRNLNM
+
+"mumps special variables, you have to add $ to iskeyword for this to work
+"it is already added in settings.vim, sourced if in a mumps filetype buffer
+syntax keyword mumpsSpecialVariable contained $D $EC $ES $ET $H $I $J $K $P $Q
+syntax keyword mumpsSpecialVariable contained $R $ST $S $SY $T $TL $TR $X $Y
+syntax keyword mumpsSpecialVariable contained $ZA $ZB $ZCH $ZDA $ZD $ZED $ZEO
+syntax keyword mumpsSpecialVariable contained $ZE $ZG $ZINT $ZINI $ZJ $ZPATN
+syntax keyword mumpsSpecialVariable contained $ZSO $ZS $ZT $ZDIR $ZGBL $ZL $ZPOS
+syntax keyword mumpsSpecialVariable contained $ZPROMP $ZRO $ZSO $ZS $ZT $ZVER
+syntax keyword mumpsSpecialVariable contained $DEVICE $ECODE $ESTACK $ETRAP
+syntax keyword mumpsSpecialVariable contained $HOROLOG $IO $JOB $KEY $PRINCIPAL
+syntax keyword mumpsSpecialVariable contained $QUIT $REFERENCE $STACK $STORAGE
+syntax keyword mumpsSpecialVariable contained $SYSTEM $TEST $TLEVEL $TRESTART
+syntax keyword mumpsSpecialVariable contained $ZCHSET $ZCM[DLINE] $ZCO[MPILE]
+syntax keyword mumpsSpecialVariable contained $ZC[STATUS] $ZCS[TATUS] $ZDATEFORM
+syntax keyword mumpsSpecialVariable contained $ZDIRECTORY $ZEDIT $ZEOF $ZERROR
+syntax keyword mumpsSpecialVariable contained $ZGBLDIR $ZINTERRUPT $ZININTERRUPT
+syntax keyword mumpsSpecialVariable contained $ZIO $ZJOB $ZL[EVEL] $ZMAXTPTI[ME]
+syntax keyword mumpsSpecialVariable contained $ZMO[DE] $ZPATNUME[RIC]
+syntax keyword mumpsSpecialVariable contained $ZPOS[ITION] $ZPROM[PT]
+syntax keyword mumpsSpecialVariable contained $ZRO[UTINES] $ZSOURCE $ZSTATUS
+syntax keyword mumpsSpecialVariable contained $ZSTEP $ZSY[STEM] $ZTE[XIT]
+syntax keyword mumpsSpecialVariable contained $ZT[RAP] $ZV[ERSION] $ZYER[ROR]
+syntax keyword mumpsSpecialVariable contained $ZTCO[DE] $ZTDA[TA] $ZTLE[VEL]
+syntax keyword mumpsSpecialVariable contained $ZTOL[DVAL] $ZTRI[GGEROP]
+syntax keyword mumpsSpecialVariable contained $ZTSL[ATE] $ZTUP[DATE] $ZTVA[LUE]
+syntax keyword mumpsSpecialVariable contained $ZTWO[RMHOLE]
+
+"fold comment blocks
+syntax region mumpsCommentBlock keepend transparent fold
+  \ start=/\(^\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\|\s\+;\@!\).*\n\)\@<=\s\+;/
+  \ end=/\n\ze\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\|\s\+;\@!\)/
+
+"fold dotted-do blocks recursively, to an arbitrary depth
+"foldnestmax defaults to 20, which should be more than enough
+syntax region mumpsDoBlock keepend transparent fold
+  \ start=/^.*\s[Dd][Oo]\?\(\n\|:.*\n\|\s\{2}.*\n\)\ze\z\(\(\s\+\.\)\+\)/
+  \ skip=/\n\([%A-Za-z][A-Za-z0-9]*\|[0-9]\+\)\z1/
+  \ end=/\n\ze\z1\@!/
+
+"fold entry point blocks
+"syntax region mumpsEntryBlock keepend transparent fold
+"  \ start=/^\S.*$/ end=/^.*\n\ze\S/
+
+"highlight the syntax groups, change colors easily with :colorscheme
+highlight def link mumpsLevelLine Normal
+highlight def link mumpsFormalLine Normal
+highlight def link mumpsCommentLine Normal
+
+highlight def link mumpsDotLevel Statement
+highlight def link mumpsDotRegion Statement
+highlight def link mumpsLabel PreProc
+highlight def link mumpsLabelList Error
+
+highlight def link mumpsStringError Error
+highlight def link mumpsParenError Error
+
+highlight def link mumpsString String
+highlight def link mumpsComment Comment
+highlight def link mumpsVariable PreProc
+highlight def link mumpsNumber Number
+highlight def link mumpsOperator Type
+highlight def link mumpsComma Type
+highlight def link mumpsSpace Normal
+highlight def link mumpsCommandEnd Normal
+
+highlight def link mumpsArgument Normal
+highlight def link mumpsPostCondition Normal
+
+highlight def link mumpsExtrinsicFunction Function
+highlight def link mumpsFunctionList Error
+
+highlight def link mumpsCommand Keyword
+highlight def link mumpsFunction Function
+highlight def link mumpsSpecialVariable Identifier
+
+highlight def link mumpsCommentBlock Folded
+highlight def link mumpsDoBlock Folded
+
+let b:current_syntax = "mumps"
